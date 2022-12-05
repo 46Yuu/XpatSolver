@@ -25,14 +25,28 @@ a) Créer tout d'abord les 55 premières paires suivantes:
     Par "différence" entre a et b on entend
       - Ou bien (a-b) si b<=a
       - Ou bien (a-b+randmax) si a<b
-
+*)
+let paires (seed : int) : (int*int) list =
+   let rec listePaires (list : 'list) (i : int) : (int*int) list = 
+      if(i = 55) then list
+      else if(i = 1) then listePaires ((21,1)::list) (i+1)
+      else match list with 
+      |(a,b)::(c,d)::list' -> if (b<=d) then listePaires ((((a+21) mod 55),(d-b))::list) (i+1) else listePaires ((((a+21) mod 55),((d-b)+randmax))::list) (i+1) 
+      |_ -> failwith "error" in
+   listePaires [(0,seed)] 1;;
+(*
 b) Trier ces 55 paires par ordre croissant selon leurs premières composantes,
    puis séparer entre les 24 premières paires et les 31 suivantes.
-   Pour les 31 paires, leurs secondes composantes sont à mettre dans
+   Pour les 31 paires, leurs secondes composantes sont à mettre dans)
    une FIFO f1_init, dans cet ordre (voir `Fifo.of_list` documenté dans
    `Fifo.mli`). De même pour les 24 paires, leurs secondes composantes sont
    à mettre dans une FIFO f2_init, dans cet ordre.
 
+*)
+
+
+
+(*
 c) Un *tirage* à partir de deux FIFO (f1,f2) consiste à prendre
    leurs premières valeurs respectives n1 et n2 (cf `Fifo.pop`),
    puis calculer la "différence" de n1 et n2 (comme auparavant),

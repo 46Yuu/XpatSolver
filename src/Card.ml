@@ -10,6 +10,7 @@ type card = rank * suit
    List.map int_of_suit [Trefle;Pique;Coeur;Carreau] = [0;1;2;3]
 *)
 
+
 type suitnum = int (* 0..3 *)
 
 let num_of_suit = function
@@ -48,3 +49,5 @@ let rank_to_string = function
 
 let to_string (rk,s) = rank_to_string rk ^ suit_to_string s
 
+
+  
