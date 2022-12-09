@@ -1,12 +1,10 @@
-(** In Xpat2, the index of the game is a seed used to shuffle
+(* In Xpat2, the index of the game is a seed used to shuffle
     pseudo-randomly the cards.
     The shuffle function emulates this permutation generator.
     The input number is the seed (between 1 and 999_999_999).
     The output list is of size 52, and contains all numbers in 0..51
     (hence without duplicates).
-
 *)
-
 (* The numbers manipulated below will be in [0..randmax[ *)
 let randmax = 1_000_000_000
 
@@ -15,7 +13,7 @@ let reduce n limit =
   Int.(of_float (to_float n /. to_float randmax *. to_float limit))
 
 
-(** DESCRIPTION DE L'ALGORITHME DE GENERATION DES PERMUTATIONS
+(* DESCRIPTION DE L'ALGORITHME DE GENERATION DES PERMUTATIONS
 
 a) Créer tout d'abord les 55 premières paires suivantes:
   * premières composantes : 0 pour la premiere paire,
@@ -25,40 +23,22 @@ a) Créer tout d'abord les 55 premières paires suivantes:
     Par "différence" entre a et b on entend
       - Ou bien (a-b) si b<=a
       - Ou bien (a-b+randmax) si a<b
-*)
-let paires (seed : int) : (int*int) list =
-   let rec listePaires (list : 'list) (i : int) : (int*int) list = 
-      if(i = 55) then list
-      else if(i = 1) then listePaires ((21,1)::list) (i+1)
-      else match list with 
-      |(a,b)::(c,d)::list' -> if (b<=d) then listePaires ((((a+21) mod 55),(d-b))::list) (i+1) else listePaires ((((a+21) mod 55),((d-b)+randmax))::list) (i+1) 
-      |_ -> failwith "error" in
-   listePaires [(0,seed)] 1;;
-(*
 b) Trier ces 55 paires par ordre croissant selon leurs premières composantes,
    puis séparer entre les 24 premières paires et les 31 suivantes.
    Pour les 31 paires, leurs secondes composantes sont à mettre dans)
    une FIFO f1_init, dans cet ordre (voir `Fifo.of_list` documenté dans
    `Fifo.mli`). De même pour les 24 paires, leurs secondes composantes sont
    à mettre dans une FIFO f2_init, dans cet ordre.
-
-*)
-
-
-
-(*
 c) Un *tirage* à partir de deux FIFO (f1,f2) consiste à prendre
    leurs premières valeurs respectives n1 et n2 (cf `Fifo.pop`),
    puis calculer la "différence" de n1 et n2 (comme auparavant),
    nommons-la d. Ce d est alors le résultat du tirage, associé
    à deux nouvelles FIFO constituées des restes des anciennes FIFO
    auxquelles on a rajouté respectivement n2 et d (cf `Fifo.push`).
-
 d) On commence alors par faire 165 tirages successifs en partant
    de (f1_init,f2_init). Ces tirages servent juste à mélanger encore
    les FIFO qui nous servent d'état de notre générateur pseudo-aléatoire,
    les entiers issus de ces 165 premiers tirages ne sont pas considérés.
-
 e) La fonction de tirage vue précédemment produit un entier dans
    [0..randmax[. Pour en déduire un entier dans [0..limit[ (ou limit est
    un entier positif quelconque), on utilisera alors la fonction `reduce`
@@ -82,8 +62,12 @@ est maintenant donné dans le fichier XpatRandomExemple.ml, étape par étape.
 
 *)
 
+
 (* For now, we provide a shuffle function that can handle a few examples.
    This can be kept later for testing your implementation. *)
+
+
+      
 
 let shuffle_test = function
   | 1 ->
@@ -134,4 +118,64 @@ let shuffle_test = function
 
 
 let shuffle n =
-  shuffle_test n (* TODO: changer en une implementation complete *)
+   let paires (seed : int) : (int*int) list =
+      let rec listePaires (list : 'list) (i : int) : (int*int) list = 
+         if(i = 55) then list
+         else if(i = 1) then listePaires ((21,1)::list) (i+1)
+         else match list with 
+         |(a,b)::(c,d)::list' -> if (b<=d) then listePaires ((((a+21) mod 55),(d-b))::list) (i+1) else listePaires ((((a+21) mod 55),((d-b)+randmax))::list) (i+1) 
+         |_ -> failwith "error" in
+      listePaires [(0,seed)] 1 in
+   let triPaires (list : (int*int)list) =
+      let rec triFusionSplit list = 
+         match list with 
+         |[] -> [],[]
+         |a::[] -> list,[]
+         |a::b::list' -> let (list1,list2)= triFusionSplit list' in 
+            a::list1,b::list2 in
+      let rec triFusionBis list1 list2 =
+         match list1,list2 with
+         |[],_ -> list2
+         |_,[] -> list1
+         |x1::list1',x2::list2' -> if (x1<x2) then x1::(triFusionBis list1' list2) else x2::(triFusionBis list1 list2') in
+      let rec triFusion list = 
+         match list with
+         |[] -> []
+         |x::[] -> list
+         |_ -> let (list1,list2) = triFusionSplit list in
+            triFusionBis (triFusion list1) (triFusion list2) in
+      let rec separateList list acc1 acc2= 
+         match list with
+         |[] -> acc1,acc2
+         |(a,b)::list' -> if (a < 24) then separateList list' acc1 (b::acc2) else separateList list' (b::acc1) acc2 in
+      let acc1,acc2 = separateList (List.rev(triFusion list)) [] [] in 
+      let f1_init,f2_init = Fifo.of_list acc1, Fifo.of_list acc2 in
+      f1_init,f2_init,0 in
+      let tirage (f1_init,f2_init : int Fifo.t*int Fifo.t)=
+         let n1,f1_init' = Fifo.pop (f1_init) in
+         let n2,f2_init' = Fifo.pop (f2_init) in 
+         let d = if (n2<=n1) then (n1-n2) else (n1-n2+randmax) in
+         Fifo.push n2 f1_init',Fifo.push d f2_init',d in
+   
+      let rec tirageSucc (f1_init,f2_init,d : int Fifo.t*int Fifo.t*int)(i : int) =
+         if(i<165) then tirageSucc (tirage (f1_init,f2_init)) (i+1)
+         else f1_init,f2_init in
+      let rec reduction (f1_init,f2_init : int Fifo.t*int Fifo.t) (i : int) (acc : int list) (limit : int) =
+         if (i<52) then 
+            let f1_init',f2_init',d = tirage (f1_init,f2_init) in
+            reduction (f1_init',f2_init') (i+1) ((reduce d limit)::acc) (limit-1)
+         else 
+            List.rev acc in
+   let rec permutation (list : int list) (acc : int list) =
+      match list with 
+      |[] -> acc
+      |x::list' -> let n = List.length (List.filter (fun i -> i<=x) acc) in 
+      let rec caseVide (acc : int list) (n : int) (x : int) = 
+         let m = List.length (List.filter (fun i -> x<i && i<=(x+n)) acc) in
+         if(m>0) then 
+            caseVide acc m (x+n)
+         else 
+            (x+n) in
+      permutation list' ((caseVide acc n x)::acc) in 
+   permutation (reduction (tirageSucc (triPaires (paires n)) 0) 0 [] 52) [];;
+
