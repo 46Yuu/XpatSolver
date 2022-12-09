@@ -9,11 +9,13 @@ clean:
 
 test:
 	dune runtest
-etat:
+mesTests:
 	ocamlc -c Card.mli
 	ocamlc -c Card.ml
 	ocamlc -c PArray.mli
 	ocamlc -c PArray.ml
 	ocamlc -c XpatRandomExemple.ml
+	ocamlc -c Regle.ml
 	ocamlc -c Etat.ml
-	ocamlc Card.cmo PArray.cmo XpatRandomExemple.cmo Etat.cmo -o out.exe
+	ocamlc -c Test.ml
+	ocamlc Card.cmo Regle.cmo PArray.cmo XpatRandomExemple.cmo Etat.cmo Test.cmo -o out.exe
