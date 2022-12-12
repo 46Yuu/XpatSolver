@@ -18,4 +18,5 @@ mesTests:
 	ocamlc -c Regle.ml
 	ocamlc -c Etat.ml
 	ocamlc -c Test.ml
-	ocamlc Card.cmo Regle.cmo PArray.cmo XpatRandomExemple.cmo Etat.cmo Test.cmo -o out.exe
+	ocamlc -c Fifo.ml
+	ocamlc Card.cmo Regle.cmo PArray.cmo XpatRandomExemple.cmo Etat.cmo Test.cmo Fifo.cmo -o out.exe
