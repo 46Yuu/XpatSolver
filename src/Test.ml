@@ -6,14 +6,14 @@ let midnight_oil = {
   nb_colones = 18;
   nb_registres = 0;
   nb_registres_utilise = 0;
-  tab = [|3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;1|];
+  tab_nb_cartes_colone = [|3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;3;1|];
 
 };;
 let seahaven = {
   nb_colones = 10;
   nb_registres = 4;
   nb_registres_utilise = 2;
-  tab = [|5;5;5;5;5;5;5;5;5;5|];
+  tab_nb_cartes_colone = [|5;5;5;5;5;5;5;5;5;5|];
 
 };;
 let b =  Etat.creer_partie (XpatRandomExemple.permutation_graine_1) midnight_oil;;

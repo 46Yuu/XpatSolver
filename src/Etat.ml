@@ -8,12 +8,6 @@ type colone = {
 
 }
 
-(*Un régistre contient juste une carte*)
-type registre = {
-  carte : Card.card;
-
-}
-
 type coup = {
   vide : string;
 
@@ -41,19 +35,20 @@ let sum_to_i t i =
   done;  
   !sum
 
+(* Rempli une colone *)
 let remplissage_colone (permutation : int list) (regle : Regle.regle) (num_colone: int):colone = 
   let l1 = [] in
-  let debut = sum_to_i regle.tab num_colone in
-  let fin = debut + (Array.get regle.tab num_colone) - 1 in
+  (* la variable debut est la où on doit ommencer à prendre les elements de permutation pour chaque colone*)
+  let debut = sum_to_i regle.tab_nb_cartes_colone num_colone in
+  let fin = debut + (Array.get regle.tab_nb_cartes_colone num_colone) - 1 in
   let rec aux (permutation : int list) (debut :int) (fin :int) (l : Card.card list):Card.card list =
     if debut > fin then l
-    else aux permutation (debut+1) fin  (l @ [Card.of_num((List.nth permutation debut))] ) in
+      (*On rempli la liste de sorte que le dernier élement rentré soit en position 0*)
+    else aux permutation (debut+1) fin  ([Card.of_num((List.nth permutation debut))] @l ) in
 
   {liste = aux permutation debut fin l1}
 
-
-
-
+(*Crée une partie à partir d'une règle*)
 let creer_partie (permutation : int list) (regle : Regle.regle): etat =
 
   let registres = ref [] in
@@ -62,11 +57,10 @@ let creer_partie (permutation : int list) (regle : Regle.regle): etat =
   let colones = PArray.init 10 (remplissage_colone permutation regle) in
   let taille_permutation = List.length permutation in
   let nb_registres_utilise_debut = regle.nb_registres_utilise in
+  (*Dans le cas où il y'a des cartes dans le registre de debut on rempli les registres avec le reste des cartes*)
   if nb_registres_utilise_debut > 0 then
     for i = (taille_permutation - nb_registres_utilise_debut) to (taille_permutation - 1) do
       registres := [Card.of_num((List.nth permutation i))] @ !registres;
-      print_int i;
-      print_endline "-";
     done;  
   {
     nb_colones = regle.nb_colones;
