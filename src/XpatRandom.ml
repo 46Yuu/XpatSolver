@@ -126,31 +126,16 @@ let shuffle n =
          |(a,b)::(c,d)::list' -> if (b<=d) then listePaires ((((a+21) mod 55),(d-b))::list) (i+1) else listePaires ((((a+21) mod 55),((d-b)+randmax))::list) (i+1) 
          |_ -> failwith "error" in
       listePaires [(0,seed)] 1 in
+      
    let triPaires (list : (int*int)list) =
-      let rec triFusionSplit list = 
-         match list with 
-         |[] -> [],[]
-         |a::[] -> list,[]
-         |a::b::list' -> let (list1,list2)= triFusionSplit list' in 
-            a::list1,b::list2 in
-      let rec triFusionBis list1 list2 =
-         match list1,list2 with
-         |[],_ -> list2
-         |_,[] -> list1
-         |x1::list1',x2::list2' -> if (x1<x2) then x1::(triFusionBis list1' list2) else x2::(triFusionBis list1 list2') in
-      let rec triFusion list = 
-         match list with
-         |[] -> []
-         |x::[] -> list
-         |_ -> let (list1,list2) = triFusionSplit list in
-            triFusionBis (triFusion list1) (triFusion list2) in
       let rec separateList list acc1 acc2= 
          match list with
          |[] -> acc1,acc2
          |(a,b)::list' -> if (a < 24) then separateList list' acc1 (b::acc2) else separateList list' (b::acc1) acc2 in
-      let acc1,acc2 = separateList (List.rev(triFusion list)) [] [] in 
+      let acc1,acc2 = separateList (List.rev(List.sort compare list)) [] [] in 
       let f1_init,f2_init = Fifo.of_list acc1, Fifo.of_list acc2 in
       f1_init,f2_init,0 in
+
       let tirage (f1_init,f2_init : int Fifo.t*int Fifo.t)=
          let n1,f1_init' = Fifo.pop (f1_init) in
          let n2,f2_init' = Fifo.pop (f2_init) in 
@@ -160,12 +145,14 @@ let shuffle n =
       let rec tirageSucc (f1_init,f2_init,d : int Fifo.t*int Fifo.t*int)(i : int) =
          if(i<165) then tirageSucc (tirage (f1_init,f2_init)) (i+1)
          else f1_init,f2_init in
+
       let rec reduction (f1_init,f2_init : int Fifo.t*int Fifo.t) (i : int) (acc : int list) (limit : int) =
          if (i<52) then 
             let f1_init',f2_init',d = tirage (f1_init,f2_init) in
             reduction (f1_init',f2_init') (i+1) ((reduce d limit)::acc) (limit-1)
          else 
             List.rev acc in
+
    let rec permutation (list : int list) (acc : int list) =
       match list with 
       |[] -> acc
