@@ -227,6 +227,7 @@ let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
     done;
     !retour
 
+    (*Verifie si la carte peut aller dans une colone vide*)
     let carte_peut_aller_dans_colone_vide (etat : etat) (num_carte : int) : bool =
       let retour = ref false in
       for i = 0 to ((Array.length etat.regle.tab_cartes_colone_vide) - 1)  do
@@ -288,6 +289,10 @@ let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
     done;
     (PArray.set (etat.colones) !position_a_modifier !colone_a_renvoyer)
 
+  let envoi_vers_colone_registre (carte_a_deplacer : int) (etat :etat):Card.card list =
+    [Card.of_num carte_a_deplacer]@ etat.registres
+
+
   exception Mauvais_coup of string
   let envoi_vers_carte_dest (carte_a_deplacer : int) (col_carte_depla : int) (destination : int) (col_carte_dest :int)(etat:etat) = 
     let listeDepla= PArray.get etat.colones col_carte_depla in
@@ -336,12 +341,14 @@ let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
         (*print_string "Registre 1\n";*)
         if ( (existence_place_dans_registre etat) && (etat.nb_registres > 0)) then
           begin
-          (*Si la carte est deplacable*)
-          let deplaCol,deplaBoolTeteCol = carte_en_tete_de_colone etat carte_a_deplacer in
-          if deplaBoolTeteCol || (carte_dans_registre etat carte_a_deplacer) then
-            print_string "Envoyer carte dans un registre\n";
-            etat
-          end
+            (*Si la carte est deplacable*)
+            let deplaCol,deplaBoolTeteCol = carte_en_tete_de_colone etat carte_a_deplacer in
+            if (deplaBoolTeteCol || (carte_dans_registre etat carte_a_deplacer)) then
+              begin
+                etat
+              end
+            else raise (Mauvais_coup "Mauvais coup")
+            end
           else raise (Mauvais_coup "Mauvais coup")
       end
     (*Le vrai cas où va falloir vérifier si la carte peux aller*)
@@ -412,10 +419,13 @@ let check (conf : Config.config) :unit=
         done;*)
         nb_coups := !nb_coups +1;
         (*let resultat = valider_coup etatPartie carte_a_deplacer destination (!nb_coups) in*)
+        (*On fait un try qui valide de coup ou pas et continue dans le cas où on le coup est valide*)
         try
           let nouvel_etat = valider_coup etatPartie carte_a_deplacer destination in
-          1 + lecture_ligne ci nouvel_etat
+          (*Si le coup est bon on normalise et on va à la prochiane ligne*)
+          1 + lecture_ligne ci (normalisation nouvel_etat)
         with Mauvais_coup s->
+          (*Si le coup est mauvais on arrete*)
           print_string "ECHEC ";
           print_int !nb_coups;
           print_newline ();
@@ -425,6 +435,7 @@ let check (conf : Config.config) :unit=
         print_string "--";*)
         
       with End_of_file ->
+        (*Quand ya plus aucune ligne a lire on verfie si on a gagné ou pas*)
         if partie_gagne etat then
           begin
             print_string "SUCCES";
@@ -438,7 +449,6 @@ let check (conf : Config.config) :unit=
             print_newline ();
             exit 1
           end
-
     in
     
     let canal = open_in s in
