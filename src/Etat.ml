@@ -31,56 +31,56 @@ type etat = {
   regle : regle
 }
 
+   (*Supprime la carte si dans registre*)
+   let supprimer_carte_dans_registre (etat : etat) (num_carte : int) : Card.card list =
+    List.filter (fun x -> (Card.to_num x) != num_carte) etat.registres
 let rec normalisation (etat : etat) : etat = 
   let rec normaliser_colone (etat : etat) (i : int)=
     if(i<etat.nb_colones) then 
       begin
         let col = PArray.get etat.colones i in
-        match col.liste with 
-        |[] -> normaliser_colone etat (i+1)
-        | x::l' -> let n = (Card.to_num x)/13 in 
-          let depot = PArray.get etat.depot n in
-          if((Card.to_num x mod 13)=(depot.nb_cartes_depose+1)) then  
-            begin
-              normalisation {nb_colones = etat.nb_colones;
-              colones = PArray.set etat.colones i {liste = (List.tl col.liste);};
-              nb_registres = etat.nb_registres;
-              registres = etat.registres;
-              nb_registres_dispo = etat.nb_registres_dispo;
-              depot = PArray.set etat.depot n {nb_cartes_depose = (depot.nb_cartes_depose+1);};
-              coups = etat.coups;
-              regle = etat.regle;
-              }
-            end
-          else
+        let x = List.hd col.liste in 
+        let num_depot = (Card.to_num x)/13 in 
+        let depot = PArray.get etat.depot num_depot in
+        if((  (Card.to_num x) mod 13)=(depot.nb_cartes_depose)) then  
+          begin
+            normalisation {etat with
+            colones = PArray.set etat.colones i {liste = (List.tl col.liste);};
+            depot = PArray.set etat.depot num_depot {nb_cartes_depose = (depot.nb_cartes_depose+1);};
+            }
+          end
+        else
+          begin 
             normaliser_colone etat (i+1) 
+          end
       end
     else 
-      etat
+      begin 
+        etat
+      end
   in
   let rec normaliser_registres (etat : etat) (i : int) = 
-    if(i<etat.nb_registres) then 
+    if(i<List.length etat.registres) then 
       begin 
-        match etat.registres with 
-        | [] -> normaliser_colone etat 0
-        | x::l' -> let n = (Card.to_num x)/13 in 
-          let depot = PArray.get etat.depot n in 
-          if(Card.to_num x mod 13) = (depot.nb_cartes_depose+1) then
-            begin 
-              normalisation {nb_colones = etat.nb_colones;
-              colones = etat.colones;
-              nb_registres = etat.nb_registres;
-              registres = l';
-              nb_registres_dispo = (etat.nb_registres_dispo+1);
-              depot = PArray.set etat.depot n {nb_cartes_depose = (depot.nb_cartes_depose+1);};
-              coups = etat.coups;
-              regle = etat.regle;}
-            end
-          else 
+        let x = List.nth etat.registres i in 
+        let num_depot = (Card.to_num x)/13 in 
+        let depot = PArray.get etat.depot num_depot in
+        if((Card.to_num x) mod 13) = depot.nb_cartes_depose then
+          begin 
+            normalisation {etat with
+            registres = supprimer_carte_dans_registre etat (Card.to_num x);
+            depot = PArray.set etat.depot num_depot {nb_cartes_depose = (depot.nb_cartes_depose+1);};
+            }
+          end
+        else 
+          begin
             normaliser_registres etat (i+1)
+          end 
       end
     else 
-      normaliser_colone etat 0 in 
+      begin 
+        normaliser_colone etat 0 
+      end in 
   normaliser_registres etat 0
 
 
@@ -213,19 +213,25 @@ let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
     for i = 0 to ((List.length etat.registres) -1) do
       (*Si on trouve la carte en début de colone*)
       if(  (Card.to_num ( List.nth etat.registres i)) = num_carte )then
-        retour := true
+        begin 
+          retour := true;
+        end
     done;
     !retour
 
   (*Verifie si il existe une colone vde*)
-  let existence_colone_vide (etat : etat) :bool = 
+  let existence_colone_vide (etat : etat) :int*bool = 
     let retour = ref false in
+    let colVideN = ref (-1) in
     for i = 0 to etat.nb_colones - 1 do
       (*Si on trouve la carte en début de colone*)
       if List.length (liste_colone etat i) = 0 then
-        retour := true
+        begin 
+          retour := true;
+          colVideN := i
+        end
     done;
-    !retour
+    !colVideN,!retour
 
     (*Verifie si la carte peut aller dans une colone vide*)
     let carte_peut_aller_dans_colone_vide (etat : etat) (num_carte : int) : bool =
@@ -238,25 +244,12 @@ let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
       !retour
   
     (*Supprime la carte trouvé en tête de colone*)
-    let suppripmer_carte_dans_colone (etat : etat) (num_carte : int): colone PArray.t =
-      let colone_a_renvoyer = ref {liste = []} in
-      let trouve = ref false in
-      let position_a_modifier = ref 0 in
-      for i = 0 to etat.nb_colones -1 do
-        (*Si on trouve la carte en début de colone*)
-        if(  Card.to_num ( List.hd (liste_colone etat i))) = num_carte then
-          trouve := true;
-          position_a_modifier := i;
-          colone_a_renvoyer := {liste = List.tl (liste_colone etat i)}
-          
-      done;
+    let supprimer_carte_dans_colone (etat : etat) (num_carte : int) (col : int): colone PArray.t =
+      let colone_a_renvoyer = {liste = List.tl (liste_colone etat col)} in
       (*Si on a trouvé alors on modifie la colone*)
-      if !trouve then (PArray.set (etat.colones) !position_a_modifier !colone_a_renvoyer)
-      else etat.colones
+      (PArray.set (etat.colones) col colone_a_renvoyer)
 
-      (*Supprime la carte si dans registre*)
-    let suppripmer_carte_dans_registre (etat : etat) (num_carte : int): Card.card list =
-      List.filter (fun x -> (Card.to_num x) != num_carte) etat.registres
+   
 
   (*Verifie si il ya de la place dans un registre*)
   let existence_place_dans_registre (etat : etat) :bool = 
@@ -276,56 +269,66 @@ let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
     (carte_a_deplacer mod 13) = ((destination mod 13) - 1)
   
   (*envoi une carte vers une colone vide*)
-  let envoi_vers_colone_vide (carte_a_deplacer : int) (etat :etat): colone PArray.t =
-    let colone_a_renvoyer = ref {liste = []} in
-    let position_a_modifier = ref 0 in
-    let colones = ref etat.colones in
-    for i = 0 to etat.nb_colones - 1 do
-      (*Si on trouve la premiere colone vide*)
-      if List.length (liste_colone etat i) = 0 then
-        position_a_modifier := i;
-        colone_a_renvoyer := {liste = [Card.of_num carte_a_deplacer]}
-      
-    done;
-    (PArray.set (etat.colones) !position_a_modifier !colone_a_renvoyer)
+  let envoi_vers_colone_vide (carte_a_deplacer : int) (etat :etat) (colVideN : int): colone PArray.t =
+    let colone_a_renvoyer = {liste = [Card.of_num carte_a_deplacer]} in
+    (PArray.set (etat.colones) colVideN colone_a_renvoyer)
 
   let envoi_vers_colone_registre (carte_a_deplacer : int) (etat :etat):Card.card list =
     [Card.of_num carte_a_deplacer]@ etat.registres
 
 
   exception Mauvais_coup of string
-  let envoi_vers_carte_dest (carte_a_deplacer : int) (col_carte_depla : int) (destination : int) (col_carte_dest :int)(etat:etat) = 
-    let listeDepla= PArray.get etat.colones col_carte_depla in
+  let envoi_vers_carte_dest (carte_a_deplacer : int) (col_carte_depla : int) (col_carte_dest :int)(etat:etat) (boolReg : bool) = 
     let cardDepla = Card.of_num carte_a_deplacer in
-    let listeDest = PArray.get etat.colones col_carte_dest in
-    {nb_colones = etat.nb_colones;
-    colones = PArray.set (PArray.set etat.colones col_carte_depla {liste = List.tl listeDepla.liste}) col_carte_dest {liste = ([cardDepla]@listeDepla.liste)};
-    nb_registres = etat.nb_registres;
-    registres = etat.registres;
-    nb_registres_dispo = etat.nb_registres_dispo;
-    depot = etat.depot;
-    coups = etat.coups;
-    regle = etat.regle;
-    }
+    let listeDest = (PArray.get etat.colones col_carte_dest).liste in
+    if (boolReg) then
+      begin
+        {etat with
+        registres = supprimer_carte_dans_registre etat carte_a_deplacer;
+        colones = PArray.set etat.colones col_carte_dest {liste = ([cardDepla]@listeDest)};
+        }
+      end 
+    else 
+      begin 
+        {etat with
+        colones = PArray.set (supprimer_carte_dans_colone etat carte_a_deplacer col_carte_depla) col_carte_dest {liste = ([cardDepla]@listeDest)};
+        }
+      end
+
 
   let valider_coup (etat : etat) (carte_a_deplacer : int) (destination : string):etat=
     (*Cas de l'envoi vers une colone vide*)
-    if destination.[0] = 'V' then
+    if destination = "V" then
       begin
-        if((existence_colone_vide etat) && (etat.regle.colone_vide_remplissable) && (carte_peut_aller_dans_colone_vide etat carte_a_deplacer)) then
+        let colVideN,colVideExist = existence_colone_vide etat in
+        if(colVideExist && (etat.regle.colone_vide_remplissable) && (carte_peut_aller_dans_colone_vide etat carte_a_deplacer)) then
           begin
             let deplaCol,deplaBoolTeteCol = carte_en_tete_de_colone etat carte_a_deplacer in
+            let regBool = carte_dans_registre etat carte_a_deplacer in
             (*Si la carte est deplacable*)
-            if (deplaBoolTeteCol || (carte_dans_registre etat carte_a_deplacer)) then
-              begin
-                (*Envoi vers premier colone vide et suppripmer carte partie*)
-               {etat with 
-                  registres = suppripmer_carte_dans_registre etat carte_a_deplacer;
-                  colones = envoi_vers_colone_vide carte_a_deplacer {etat with colones = suppripmer_carte_dans_colone etat carte_a_deplacer}
-                }
+            if (carte_a_deplacer mod 13 = 12 )then
+              begin 
+                if deplaBoolTeteCol then
+                  begin
+                    (*Envoi vers premier colone vide et supprimer carte partie*)
+                    {etat with 
+                      colones = envoi_vers_colone_vide carte_a_deplacer {etat with colones = supprimer_carte_dans_colone etat carte_a_deplacer deplaCol} colVideN;
+                    }
+                  end
+                else if regBool then 
+                  begin
+                    {etat with 
+                      registres = supprimer_carte_dans_registre etat carte_a_deplacer ;
+                      colones = envoi_vers_colone_vide carte_a_deplacer etat colVideN;
+                    }
+                  end
+                else 
+                  begin
+                    raise (Mauvais_coup "Mauvais coup")
+                  end
               end
             else 
-              begin
+              begin 
                 raise (Mauvais_coup "Mauvais coup")
               end
           end
@@ -336,20 +339,22 @@ let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
       end
     
     (*Cas de l envoi vers un registre*)
-    else if destination.[0] = 'T' then
+    else if destination = "T" then
       begin
-        (*print_string "Registre 1\n";*)
         if ( (existence_place_dans_registre etat) && (etat.nb_registres > 0)) then
           begin
             (*Si la carte est deplacable*)
             let deplaCol,deplaBoolTeteCol = carte_en_tete_de_colone etat carte_a_deplacer in
-            if (deplaBoolTeteCol || (carte_dans_registre etat carte_a_deplacer)) then
+            if deplaBoolTeteCol then
               begin
-                etat
+                {etat with 
+                registres = envoi_vers_colone_registre carte_a_deplacer etat;
+                colones = supprimer_carte_dans_colone etat carte_a_deplacer deplaCol;
+                }
               end
             else raise (Mauvais_coup "Mauvais coup")
-            end
-          else raise (Mauvais_coup "Mauvais coup")
+          end
+        else raise (Mauvais_coup "Mauvais coup")
       end
     (*Le vrai cas où va falloir vérifier si la carte peux aller*)
     else      
@@ -357,36 +362,65 @@ let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
         let destination_finale = int_of_string destination in
         let deplaCol,deplaBoolTeteCol = carte_en_tete_de_colone etat carte_a_deplacer in 
         let destCol,destBoolTeteCol = carte_en_tete_de_colone etat destination_finale in 
+        let regBool = carte_dans_registre etat carte_a_deplacer in
         (*Si la carte à deplacer et la destination existe*)
-        if( (deplaBoolTeteCol || (carte_dans_registre etat carte_a_deplacer))&& destBoolTeteCol) then
+        if( (deplaBoolTeteCol || regBool)&& destBoolTeteCol) then
           begin
             (*Si les cartes sont de meme couleur*)
             if (meme_couleur carte_a_deplacer destination_finale) then
               begin
                 (*Si le jeu recois les cartes sont de meme couleur*)
-                if (etat.regle.recoi_meme_couleur) then
+                if etat.regle.recoi_meme_couleur then
                   (*print_string "Deplacer\n";*)
-                  (envoi_vers_carte_dest carte_a_deplacer deplaCol destination_finale destCol etat)
+                  begin 
+                    if carte_inferieur carte_a_deplacer destination_finale then 
+                      begin 
+                        if regBool then 
+                          begin 
+                            (envoi_vers_carte_dest carte_a_deplacer (-1) destCol etat regBool);
+                          end
+                        else 
+                          begin
+                            (envoi_vers_carte_dest carte_a_deplacer deplaCol destCol etat regBool);
+                          end
+                      end
+                    else raise (Mauvais_coup "Mauvais coup")
+                  end
                 else
                   (*print_string "Erreur\n";*)
                   raise (Mauvais_coup "Mauvais coup")
               end
             (*Si les cartes sont   de couleur differentes*)
             else 
-              (*Si le je recois les cartes de couleurs alternee*)
-              if (etat.regle.recoi_couleur_alternee) then
-                (*print_string "Deplacer\n";*)
-                etat
-              else
-                (*print_string "Erreur\n";*)
-                raise (Mauvais_coup "Mauvais coup")
+              begin 
+                (*Si le je recois les cartes de couleurs alternee*)
+                if etat.regle.recoi_couleur_alternee then
+                  begin
+                    if carte_inferieur carte_a_deplacer destination_finale then
+                      begin
+                        if regBool then 
+                          begin 
+                            (envoi_vers_carte_dest carte_a_deplacer (-1) destCol etat regBool);
+                          end
+                        else 
+                          begin
+                            (envoi_vers_carte_dest carte_a_deplacer deplaCol destCol etat regBool);
+                          end
+                      end
+                    else raise (Mauvais_coup "Mauvais coup")
+                  end
+                else
+                  (*print_string "Erreur\n";*)
+                  raise (Mauvais_coup "Mauvais coup")
+              end
           end
           (*Le cas ou les cartes ne sont pas deplaçables*)
         else
-          (*print_string "Erreur\n";*)
-          raise (Mauvais_coup "Mauvais coup")
+          begin 
+            (*print_string "Erreur\n";*)
+            raise (Mauvais_coup "Mauvais coup")
+          end
       end
-     
 
 (*Verifie si tous les depot sont à 13*)
 let partie_gagne (etat : etat):bool =
@@ -402,10 +436,9 @@ let check (conf : Config.config) :unit=
   (*print_endline "(-----------Putain arrivé ici------ le mode est\n";*)
   (*let etatPartie = ref (Some (normalisation (etatAPartirDeConfiguration conf))) in*)
   let etatPartie = normalisation (etatAPartirDeConfiguration conf) in
-  let nb_coups = ref 1 in
   match conf.mode with
   | Check s -> 
-    let rec lecture_ligne ci etat =
+    let rec lecture_ligne ci etat i =
       try
         (*On lit une ligne*)
         let ligne = input_line ci in
@@ -417,17 +450,17 @@ let check (conf : Config.config) :unit=
           print_string (List.nth ligne_split i);
           print_string "--";
         done;*)
-        nb_coups := !nb_coups +1;
         (*let resultat = valider_coup etatPartie carte_a_deplacer destination (!nb_coups) in*)
         (*On fait un try qui valide de coup ou pas et continue dans le cas où on le coup est valide*)
         try
           let nouvel_etat = valider_coup etatPartie carte_a_deplacer destination in
           (*Si le coup est bon on normalise et on va à la prochiane ligne*)
-          1 + lecture_ligne ci (normalisation nouvel_etat)
+          1 + lecture_ligne ci (normalisation nouvel_etat) (i+1)
+          
         with Mauvais_coup s->
           (*Si le coup est mauvais on arrete*)
           print_string "ECHEC ";
-          print_int !nb_coups;
+          print_int i;
           print_newline ();
           exit 1;
 
@@ -445,14 +478,14 @@ let check (conf : Config.config) :unit=
         else
           begin
             print_string "ECHEC ";
-            print_int !nb_coups;
+            print_int i;
             print_newline ();
             exit 1
           end
     in
     
     let canal = open_in s in
-    let lu = lecture_ligne canal etatPartie in
+    let lu = lecture_ligne canal etatPartie 1 in
     (*print_int taille;*)
     close_in canal;
   | Search s -> print_endline "Un Search"

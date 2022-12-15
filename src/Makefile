@@ -16,6 +16,8 @@ mesTests:
 	ocamlc -c Card.ml
 	ocamlc -c PArray.mli
 	ocamlc -c PArray.ml
+	ocamlc -c Fifo.mli
+	ocamlc -c Fifo.ml
 	ocamlc -c XpatRandomExemple.ml
 	ocamlc -c XpatRandom.mli
 	ocamlc -c XpatRandom.ml
@@ -23,6 +25,5 @@ mesTests:
 	ocamlc -c Config.ml
 	ocamlc -c Etat.ml
 	ocamlc -c Test.ml
-	ocamlc -c Fifo.mli
-	ocamlc -c Fifo.ml
+	
 	ocamlc Card.cmo Regle.cmo PArray.cmo XpatRandomExemple.cmo Fifo.cmo XpatRandom.cmo Config.cmo Etat.cmo Test.cmo -o out.exe
