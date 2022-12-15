@@ -1,14 +1,15 @@
 
 open XpatLib
+open Config
 
-type game = Freecell | Seahaven | Midnight | Baker
+(*type game = Freecell | Seahaven | Midnight | Baker
 
 type mode =
   | Check of string (* filename of a solution file to check *)
   | Search of string (* filename where to write the solution *)
 
-type config = { mutable game : game; mutable seed: int; mutable mode: mode }
-let config = { game = Freecell; seed = 1; mode = Search "" }
+type config = { mutable game : game; mutable seed: int; mutable mode: mode }*)
+let config = {game = Freecell; seed = 1; mode = Search "" }
 
 let getgame = function
   | "FreeCell"|"fc" -> Freecell
@@ -41,6 +42,7 @@ let treat_game conf =
     permut;
   print_newline ();
   print_string "C'est tout pour l'instant. TODO: continuer...\n";
+  Etat.check conf;
   exit 0
 
 let main () =
