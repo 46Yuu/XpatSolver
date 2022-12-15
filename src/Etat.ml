@@ -195,14 +195,18 @@ let liste_colone (etat : etat) (num_colone : int) : Card.card list =
   (PArray.get etat.colones num_colone).liste
     
 (* Verifie si une carte se trouve en tête de colone*)
-let carte_en_tete_de_colone (etat : etat) (num_carte : int) : bool =
+let carte_en_tete_de_colone (etat : etat) (num_carte : int) : int*bool =
   let retour = ref false in
+  let coloneN = ref (-1) in
   for i = 0 to etat.nb_colones -1 do
     (*Si on trouve la carte en début de colone*)
     if(  Card.to_num ( List.hd (liste_colone etat i))) = num_carte then
-      retour := true
+      begin 
+        retour := true;
+        coloneN := i;
+      end
   done;
-  !retour
+  !coloneN,!retour
 
 let carte_dans_registre (etat : etat) (num_carte : int) : bool =
   let retour = ref false in
@@ -246,10 +250,22 @@ let carte_dans_registre (etat : etat) (num_carte : int) : bool =
       for i = 0 to etat.nb_colones - 1 do
         (*Si on trouve la carte en début de colone*)
         if List.length (liste_colone etat i) = 0 then
-          colones := PArray.set 
+          colones := PArray.set
 
       done*)
-
+  let envoi_vers_carte_dest (carte_a_deplacer : int) (col_carte_depla : int) (destination : int) (col_carte_dest :int)(etat:etat) = 
+    let listeDepla= PArray.get etat.colones col_carte_depla in
+    let cardDepla = Card.of_num carte_a_deplacer in
+    let listeDest = PArray.get etat.colones col_carte_dest in
+    {nb_colones = etat.nb_colones;
+    colones = PArray.set (PArray.set etat.colones col_carte_depla {liste = List.tl listeDepla.liste}) col_carte_dest {liste = ([cardDepla]@listeDepla.liste)};
+    nb_registres = etat.nb_registres;
+    registres = etat.registres;
+    nb_registres_dispo = etat.nb_registres_dispo;
+    depot = etat.depot;
+    coups = etat.coups;
+    regle = etat.regle;
+    }
 
   let valider_coup (etat : etat) (carte_a_deplacer : int) (destination : string) (nb_coups : int) =
     (*Cas de l'envoi vers une colone vide*)
@@ -257,8 +273,9 @@ let carte_dans_registre (etat : etat) (num_carte : int) : bool =
       begin
         if((existence_colone_vide etat) && (etat.regle.colone_vide_remplissable)) then
           begin
+            let deplaCol,deplaBoolTeteCol = carte_en_tete_de_colone etat carte_a_deplacer in
             (*Si la carte est deplacable*)
-            if ((carte_en_tete_de_colone etat carte_a_deplacer) || (carte_dans_registre etat carte_a_deplacer)) then
+            if (deplaBoolTeteCol || (carte_dans_registre etat carte_a_deplacer)) then
               begin
                 (*Envoi vers premier colone vide et suppripmer carte partie*)
                 etat
@@ -278,7 +295,8 @@ let carte_dans_registre (etat : etat) (num_carte : int) : bool =
         if ( (existence_place_dans_registre etat) && (etat.nb_registres > 0)) then
           begin
           (*Si la carte est deplacable*)
-          if (carte_en_tete_de_colone etat carte_a_deplacer) || (carte_dans_registre etat carte_a_deplacer) then
+          let deplaCol,deplaBoolTeteCol = carte_en_tete_de_colone etat carte_a_deplacer in
+          if deplaBoolTeteCol || (carte_dans_registre etat carte_a_deplacer) then
             print_string "Envoyer carte dans un registre\n";
             etat
           end
@@ -288,8 +306,10 @@ let carte_dans_registre (etat : etat) (num_carte : int) : bool =
     else      
       begin
         let destination_finale = int_of_string destination in
+        let deplaCol,deplaBoolTeteCol = carte_en_tete_de_colone etat carte_a_deplacer in 
+        let destCol,destBoolTeteCol = carte_en_tete_de_colone etat destination_finale in 
         (*Si la carte à deplacer et la destination existe*)
-        if( ((carte_en_tete_de_colone etat carte_a_deplacer) || (carte_dans_registre etat carte_a_deplacer))&& (carte_en_tete_de_colone etat destination_finale)) then
+        if( (deplaBoolTeteCol || (carte_dans_registre etat carte_a_deplacer))&& destBoolTeteCol) then
           begin
             (*Si les cartes sont de meme couleur*)
             if (meme_couleur carte_a_deplacer destination_finale) then
@@ -297,12 +317,12 @@ let carte_dans_registre (etat : etat) (num_carte : int) : bool =
                 (*Si le jeu recois les cartes sont de meme couleur*)
                 if (etat.regle.recoi_meme_couleur) then
                   (*print_string "Deplacer\n";*)
-                  etat
+                  envoi_vers_carte_dest carte_a_deplacer deplaCol destination_finale destCol etat
                 else
                   (*print_string "Erreur\n";*)
                   etat
               end
-            (*Si les cartes sont de couleur differentes*)
+            (*Si les cartes sont   de couleur differentes*)
             else 
               (*Si le je recois les cartes de couleurs alternee*)
               if (etat.regle.recoi_couleur_alternee) then
