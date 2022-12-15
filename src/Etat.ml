@@ -31,18 +31,18 @@ type etat = {
   regle : regle
 }
 
-let normalisation (etat : etat) : etat = 
-  let rec normaliser (etat : etat) (i : int)=
+let rec normalisation (etat : etat) : etat = 
+  let rec normaliser_colone (etat : etat) (i : int)=
     if(i<etat.nb_colones) then 
       begin
         let col = PArray.get etat.colones i in
         match col.liste with 
-        |[] -> normaliser etat (i+1)
+        |[] -> normaliser_colone etat (i+1)
         | x::l' -> let n = (Card.to_num x)/13 in 
           let depot = PArray.get etat.depot n in
           if((Card.to_num x mod 13)=(depot.nb_cartes_depose+1)) then  
             begin
-              normaliser {nb_colones = etat.nb_colones;
+              normalisation {nb_colones = etat.nb_colones;
               colones = PArray.set etat.colones i {liste = (List.tl col.liste);};
               nb_registres = etat.nb_registres;
               registres = etat.registres;
@@ -50,15 +50,38 @@ let normalisation (etat : etat) : etat =
               depot = PArray.set etat.depot n {nb_cartes_depose = (depot.nb_cartes_depose+1);};
               coups = etat.coups;
               regle = etat.regle;
-              } 0 
+              }
             end
           else
-            normaliser etat (i+1) 
+            normaliser_colone etat (i+1) 
       end
     else 
       etat
   in
-  normaliser etat 0
+  let rec normaliser_registres (etat : etat) (i : int) = 
+    if(i<etat.nb_registres) then 
+      begin 
+        match etat.registres with 
+        | [] -> normaliser_colone etat 0
+        | x::l' -> let n = (Card.to_num x)/13 in 
+          let depot = PArray.get etat.depot n in 
+          if(Card.to_num x mod 13) = (depot.nb_cartes_depose+1) then
+            begin 
+              normalisation {nb_colones = etat.nb_colones;
+              colones = etat.colones;
+              nb_registres = etat.nb_registres;
+              registres = l';
+              nb_registres_dispo = (etat.nb_registres_dispo+1);
+              depot = PArray.set etat.depot n {nb_cartes_depose = (depot.nb_cartes_depose+1);};
+              coups = etat.coups;
+              regle = etat.regle;}
+            end
+          else 
+            normaliser_registres etat (i+1)
+      end
+    else 
+      normaliser_colone etat 0 in 
+  normaliser_registres etat 0
 
 
 
