@@ -22,7 +22,7 @@ let midnight_oil = {
     recoi_meme_couleur = true;
     colone_vide_remplissable = true;
     (*les colone vide de seahaven ne prennent que des rois*)
-    tab_cartes_colone_vide = [|12;25;38;51|];
+    tab_cartes_colone_vide = [|(13,Trefle);(13, Pique);(13,Carreau);(13,Coeur)|];
   
   }
 
@@ -34,7 +34,7 @@ let midnight_oil = {
     recoi_couleur_alternee = true;
     recoi_meme_couleur = false;
     colone_vide_remplissable = true;
-    tab_cartes_colone_vide = Array.init 52 (fun x -> x);
+    tab_cartes_colone_vide = Array.init 52 (fun x -> Card.of_num x);
 
   
   }

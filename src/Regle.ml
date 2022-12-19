@@ -9,6 +9,6 @@ type regle = {
   recoi_meme_couleur : bool;
   colone_vide_remplissable: bool;
   (*Tableau des cartes qui peuevnt aller dans ue colone vide*)
-  tab_cartes_colone_vide : int array;
+  tab_cartes_colone_vide : Card.card array;
   
 };;
