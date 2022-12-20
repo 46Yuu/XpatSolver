@@ -135,6 +135,12 @@ let sum_to_i t i =
   done;  
   !sum
 
+(*Envoi les rois en fin de colone pour Baker*)
+let envoi_roi_en_fond_de_colone (liste: card list) :card list=
+  let liste_des_rois = List.filter (fun (rank,suit) -> rank = 13) liste in
+  let liste_des_autres = List.filter (fun (rank,suit) -> rank != 13) liste in
+  liste_des_autres @ (List.rev liste_des_rois)
+
 (* Rempli une colone *)
 let remplissage_colone (permutation : int list) (regle : Regle.regle) (num_colone: int):colone = 
   let l1 = [] in
@@ -145,8 +151,9 @@ let remplissage_colone (permutation : int list) (regle : Regle.regle) (num_colon
     if debut > fin then l
       (*On rempli la liste de sorte que le dernier élement rentré soit en position 0*)
     else aux permutation (debut+1) fin  ([Card.of_num((List.nth permutation debut))] @l ) in
-
-  {liste = aux permutation debut fin l1}
+   (*On verifie si les rois doivent aller en fond de colone comme dans baker*) 
+  if regle.roi_en_fond_de_colone then {liste =  envoi_roi_en_fond_de_colone(aux permutation debut fin l1)}
+  else {liste = aux permutation debut fin l1}
 
 (*Crée une partie à partir d'une règle*)
 let creer_partie (permutation : int list) (regle : Regle.regle): etat =
@@ -183,6 +190,7 @@ let creer_partie (permutation : int list) (regle : Regle.regle): etat =
     recoi_meme_couleur = true;
     colone_vide_remplissable = false;
     tab_cartes_colone_vide = [||];
+    roi_en_fond_de_colone = false;
   
   }
   let seahaven = {
@@ -195,6 +203,8 @@ let creer_partie (permutation : int list) (regle : Regle.regle): etat =
     colone_vide_remplissable = true;
     (*les colone vide de seahaven ne prennent que des rois*)
     tab_cartes_colone_vide = [|(13,Trefle);(13, Pique);(13,Carreau);(13,Coeur)|];
+    roi_en_fond_de_colone = false;
+
   
   }
 
@@ -207,6 +217,7 @@ let creer_partie (permutation : int list) (regle : Regle.regle): etat =
     recoi_meme_couleur = false;
     colone_vide_remplissable = true;
     tab_cartes_colone_vide = Array.init 52 (fun x -> Card.of_num x);
+    roi_en_fond_de_colone = false;
 
   
   }
@@ -220,6 +231,7 @@ let creer_partie (permutation : int list) (regle : Regle.regle): etat =
     recoi_meme_couleur = true;
     colone_vide_remplissable = false;
     tab_cartes_colone_vide = [||];
+    roi_en_fond_de_colone = true;
   
   }
 
