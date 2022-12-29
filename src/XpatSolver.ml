@@ -42,7 +42,10 @@ let treat_game conf =
     permut;
   print_newline ();
   (*print_string "C'est tout pour l'instant. TODO: continuer...\n";*)
-  Etat.check conf;
+  match conf.mode with
+  | Check s -> Etat.check conf
+  | Search s -> Searching.search conf
+  ;
   exit 0
 
 let main () =

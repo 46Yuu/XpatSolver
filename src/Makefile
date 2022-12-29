@@ -24,6 +24,7 @@ mesTests:
 	ocamlc -c Regle.ml
 	ocamlc -c Config.ml
 	ocamlc -c Etat.ml
+	ocamlc -c Searching.ml
 	ocamlc -c Test.ml
 	
-	ocamlc Card.cmo Regle.cmo PArray.cmo XpatRandomExemple.cmo Fifo.cmo XpatRandom.cmo Config.cmo Etat.cmo Test.cmo -o out.exe
+	ocamlc Card.cmo Regle.cmo PArray.cmo XpatRandomExemple.cmo Fifo.cmo XpatRandom.cmo Config.cmo Etat.cmo Searching.cmo Test.cmo -o out.exe

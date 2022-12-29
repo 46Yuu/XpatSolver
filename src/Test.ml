@@ -56,8 +56,16 @@ let midnight_oil = {
   
   }
 
-let b =  Etat.creer_partie (XpatRandomExemple.permutation_graine_1) freecell;;
-print_int (Card.to_num (List.nth ((PArray.get b.colones 7).liste) 0));;
+let b =  Etat.creer_partie (XpatRandom.shuffle 123) seahaven;;
+let c =  Etat.creer_partie (XpatRandom.shuffle 123) seahaven;;
+let d =  Etat.creer_partie (XpatRandom.shuffle 12345) seahaven;;
+
+print_endline "Debut Test";;
+
+
+(* if (Search.egalite_colones b.colones d.colones )then print_endline "vrai"
+else print_endline "Faux" *)
+(* print_int (Card.to_num (List.nth ((PArray.get b.colones 7).liste) 0));;
 print_endline "";;
 print_int (Card.to_num (List.nth ((PArray.get b.colones 7).liste) 1));;
 print_endline "";;
@@ -72,4 +80,4 @@ print_int (Card.to_num (List.nth (b.registres) 1));;
 print_endline "Registre 3";;
 print_int (Card.to_num (List.nth (b.registres) 2));;
 print_endline "Registre 4";;
-print_int (Card.to_num (List.nth (b.registres) 3));;
+print_int (Card.to_num (List.nth (b.registres) 3));; *)
