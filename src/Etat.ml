@@ -29,12 +29,12 @@ type etat = {
   nb_registres_dispo : int;
   depot : depot PArray.t;
   coups : coup list;
-  regle : regle
+  regle : regle;
 }
 
    (*Supprime la carte si dans registre*)
-   let supprimer_carte_dans_registre (etat : etat) (num_carte : int) : Card.card list =
-    List.filter (fun x -> (Card.to_num x) != num_carte) etat.registres
+let supprimer_carte_dans_registre (etat : etat) (num_carte : int) : Card.card list =
+List.filter (fun x -> (Card.to_num x) != num_carte) etat.registres
 let rec normalisation (etat : etat) : etat = 
   let rec normaliser_colone (etat : etat) (i : int)=
     if(i<etat.nb_colones) then 
@@ -48,7 +48,6 @@ let rec normalisation (etat : etat) : etat =
           let depot = PArray.get etat.depot num_depot in
           if((rank)=(depot.nb_cartes_depose)+1) then  
             begin
-
               normalisation {etat with
               colones = PArray.set etat.colones i {liste = (List.tl col.liste);};
               depot = PArray.set etat.depot num_depot {nb_cartes_depose = (depot.nb_cartes_depose+1);};
@@ -115,7 +114,7 @@ let remplissage_colone (permutation : int list) (regle : Regle.regle) (num_colon
     if debut > fin then l
       (*On rempli la liste de sorte que le dernier élement rentré soit en position 0*)
     else aux permutation (debut+1) fin  ([Card.of_num((List.nth permutation debut))] @l ) in
-   (*On verifie si les rois doivent aller en fond de colone comme dans baker*) 
+    (*On verifie si les rois doivent aller en fond de colone comme dans baker*) 
   if regle.roi_en_fond_de_colone then {liste =  envoi_roi_en_fond_de_colone(aux permutation debut fin l1)}
   else {liste = aux permutation debut fin l1}
 
@@ -142,7 +141,6 @@ let creer_partie (permutation : int list) (regle : Regle.regle): etat =
     depot = depots;
     coups = coups;
     regle = regle;
-    
   }
 
   let midnight_oil = {
@@ -238,7 +236,6 @@ let liste_colone (etat : etat) (num_colone : int) : Card.card list =
 
   let rec carte_en_tete_de_colone (etat : etat) (num_carte : int) (i : int) : int*bool =
     let card_test = Card.of_num num_carte in
-
     if (i<etat.nb_colones) then
       begin 
         (*Si on trouve la carte en début de colone*)
@@ -506,7 +503,6 @@ let partie_gagne (etat : etat):bool =
       retour := false
   done;
   !retour
-
 
 let check (conf : Config.config) :unit=
   (*print_endline "(-----------Putain arrivé ici------ le mode est\n";*)
