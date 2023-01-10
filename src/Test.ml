@@ -61,6 +61,35 @@ let c =  Etat.creer_partie (XpatRandom.shuffle 123) seahaven;;
 let d =  Etat.creer_partie (XpatRandom.shuffle 12345) seahaven;;
 
 print_endline "Debut Test";;
+print_int (Searching.compare_state b d);;
+print_newline ();;
+
+let le_set = Searching.States.empty;;
+let l_set = Searching.States.add b le_set;;
+print_string "Taille debut = ";;
+print_int (List.length(Searching.States.elements l_set));;
+print_newline ();;
+let ll_set = Searching.States.add b l_set;;
+print_string "Taille fin a près le re-add de b = ";;
+print_int (List.length(Searching.States.elements ll_set));;
+print_newline ();;
+
+let ll_set = Searching.States.add d ll_set;;
+print_string "Taille fin a près le add de d = ";;
+print_int (List.length(Searching.States.elements ll_set));;
+print_newline ();;
+
+let ll_set = Searching.States.add c ll_set;;
+print_string "Taille fin a près le add de c = ";;
+print_int (List.length(Searching.States.elements ll_set));;
+print_newline ();;
+
+let ll_set = Searching.States.remove c ll_set;;
+print_string "Taille fin a près le remove de c = ";;
+print_int (List.length(Searching.States.elements ll_set));;
+print_newline ();;
+
+
 
 
 (* if (Search.egalite_colones b.colones d.colones )then print_endline "vrai"

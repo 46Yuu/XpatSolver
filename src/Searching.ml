@@ -49,9 +49,44 @@ let rec get_score (etat : etat) (i:int):int =
 let comparaison_inferiorite_etat (e1 :etat) (e2 :etat):int =
   (get_score e1 0) - (get_score e2 0)
 
+
+let afficher_etat e =
+  print_string "e--";
+  print_string "nb_colone est ";
+  print_int (PArray.length e.colones);
+  print_string " nb_registre est ";
+  print_int (List.length e.registres);
+  print_string "--e"
+
+
+
 (*Fonction pour faire la copie d'etat*)
-let copy_etat (etat:etat) :etat = etat
-  
+let copy_etat (etat:etat) :etat = 
+  (* afficher_etat etat; *)
+  let rec etatCopy etat iPArray =
+    if (iPArray<etat.nb_colones) then
+      begin 
+        etatCopy ({etat with colones = PArray.set etat.colones iPArray (PArray.get etat.colones iPArray)}) (iPArray+1)
+      end
+    else
+      begin
+        (*Pour copier le depot*)
+        let rec auxDepot etat i =
+          if (i < 4) then 
+            begin  
+              auxDepot ({etat with depot = PArray.set etat.depot i (PArray.get etat.depot i)}) (i+1) 
+            end 
+          else 
+            begin 
+              etat 
+            end
+          in
+        auxDepot etat 0
+      end in 
+  etatCopy etat 0
+
+
+
 
 
 (*Choix de l'etat de plus hau score*)
@@ -80,15 +115,22 @@ let remplir_fichier_solution nom_fichier liste_de_coups =
   close_out c
 
 (*Retourne la liste des cartes à deplacer c'est à dire celles en tête de colones*)
-let cartes_en_tete_de_colone (etat:etat) :(int list) =
-  let rec cartes_en_tete_de_colone_rec (etat:etat) (num_colone:int) (liste:int list) :(int list) =
+let cartes_en_tete_de_colone (etat:etat) :((int*int) list) =
+  let rec cartes_en_tete_de_colone_rec (etat:etat) (num_colone:int) (liste:(int*int) list) :((int*int) list) =
   if num_colone < etat.nb_colones then
     begin
-      print_string "Nombre d'element dans la liste ";
-      (* print_int List.length( (PArray.get etat.colones num_colone).liste); *)
-      print_string " * ";
-      let carte_en_tete = List.hd( (PArray.get etat.colones num_colone).liste)  in
-      cartes_en_tete_de_colone_rec etat (num_colone+1) ((Card.to_num carte_en_tete)::liste)
+      (* print_string "Nombre d'element dans la liste ";
+      print_int (List.length( (PArray.get etat.colones num_colone).liste));
+      print_string " * "; *)
+      if (List.length( (PArray.get etat.colones num_colone).liste) = 0) then
+        begin
+          cartes_en_tete_de_colone_rec etat (num_colone+1) (liste)
+        end
+      else
+        begin
+          let carte_en_tete = List.hd( (PArray.get etat.colones num_colone).liste)  in
+            cartes_en_tete_de_colone_rec etat (num_colone+1) ( ((Card.to_num carte_en_tete),num_colone)::liste)
+        end
     end
   else
     begin
@@ -99,46 +141,76 @@ let cartes_en_tete_de_colone (etat:etat) :(int list) =
   
   (*Retourne la liste des String des destinations qui sont des coups valides par rapport
   a la carte a deplacer*)
-let rec tout_coups_possibles (carte_depart : int) (etat : etat) (i : int) =
+let rec tout_coups_possibles (carte_depart : int) (num_colone : int) (etat : etat) (i : int) =
   if (i < etat.nb_colones) then 
     begin 
-      let rank,suit = (List.hd((PArray.get etat.colones i).liste)) in
-      if Etat.carte_inferieur carte_depart (Card.to_num (rank,suit)) then  
-        begin 
-          [string_of_int(Card.to_num (rank,suit))]@tout_coups_possibles carte_depart etat (i+1)
-        end 
-      else 
-        begin 
-          tout_coups_possibles carte_depart etat (i+1)
+      if (List.length((PArray.get etat.colones i).liste) = 0) then
+        begin
+          tout_coups_possibles carte_depart num_colone etat (i+1)
         end
+      else
+        begin
+          let rank,suit = (List.hd((PArray.get etat.colones i).liste)) in
+          if Etat.carte_inferieur carte_depart (Card.to_num (rank,suit)) then  
+            begin 
+              [string_of_int(Card.to_num (rank,suit))]@tout_coups_possibles carte_depart num_colone etat (i+1)
+            end 
+          else 
+            begin 
+              tout_coups_possibles carte_depart num_colone etat (i+1)
+            end
+        end
+      
     end
   else 
     begin
-      if Etat.existence_place_dans_registre etat then
-        begin 
-          ["T"]
-        end 
-      else 
-        begin
-          []
-        end
+      let coup_vers_colone_vide etat = 
+        let (i,bool_colone_vide) = Etat.existence_colone_vide etat 0 in
+        if (bool_colone_vide && Etat.carte_peut_aller_dans_colone_vide etat carte_depart && List.length((PArray.get etat.colones num_colone).liste) = 0) then
+          begin 
+            ["V"]
+          end 
+        else 
+          begin 
+            []
+          end in
+      let coup_vers_registre etat =
+        if Etat.existence_place_dans_registre etat then
+          begin 
+            ["T"]@coup_vers_colone_vide etat
+          end 
+        else 
+          begin
+            coup_vers_colone_vide etat
+          end in 
+      coup_vers_registre etat 
     end
 
 (*Retourne la liste des etats atteignables apres tout les deplacements de toutes les cartes*)
-let deplacement_des_cartes (cartes:int list) (etat_a_modifier:etat) = 
-
+let deplacement_des_cartes (cartes:(int*int) list) (etat_a_modifier:etat) = 
   (*Retourne la liste des etats atteignables avec une carte*)
   let rec tout_deplacements_de_une_carte num_carte les_deplacements etat liste_des_etats_atteints =
     match les_deplacements with
     | [] -> liste_des_etats_atteints
-    | x::xs -> tout_deplacements_de_une_carte num_carte xs etat ((valider_coup (copy_etat etat) num_carte x)::liste_des_etats_atteints)
+    | x::xs ->
+      if(x = "V") then
+        begin
+          print_string "Vers le vide"
+        end;
+      let coup = (string_of_int num_carte)^" "^x in
+      try
+        tout_deplacements_de_une_carte num_carte xs etat 
+        ((normalisation (valider_coup (copy_etat {etat with coups = etat.coups@[coup]}) num_carte x))::liste_des_etats_atteints)
+      with Mauvais_coup s ->
+        (*Quand on tombe sur un mauvais coup, on l'ignore et on passe à la suite*)
+        tout_deplacements_de_une_carte num_carte xs etat liste_des_etats_atteints
   in
   (*Retourne la liste des etats atteignables apres tout les deplacements de toutes les cartes*)
   let rec tout_deplacements_de_toute_cartes cartes etat (liste_des_etats_atteints: etat list) =
     match cartes with
     | [] -> liste_des_etats_atteints
-    | x::l ->
-      let coups_possibles = tout_coups_possibles x etat 0 in
+    | (x,num_colone)::l ->
+      let coups_possibles = tout_coups_possibles x num_colone etat 0 in
       tout_deplacements_de_toute_cartes l etat ((tout_deplacements_de_une_carte x coups_possibles etat [])
       @liste_des_etats_atteints)
     in
@@ -150,37 +222,44 @@ let rec ajout_des_etats_atteints (etat_restant_a_visiter:States.t) liste_des_eta
   | [] -> etat_restant_a_visiter
   | x::l -> ajout_des_etats_atteints (States.add x etat_restant_a_visiter) l
 
+(*Supprime les états dont le score est de -20 par rapport au plus haut score*)
+let suppression_etat_inutile (etat_restant_a_visiter:States.t) =
+  let plus_haut_score = get_score (choix_etat_a_visiter etat_restant_a_visiter) 0 in
+  States.filter (fun s -> (get_score s 0) >= (plus_haut_score - 19) ) etat_restant_a_visiter
+  
 
 exception Aucune_Solution_Trouve
 (*Prends les etats déja traite et les restant puis lance le parcours de solution *)
 let rec parcours_des_solutions (etat_restant_a_visiter:States.t) (etat_deja_traite:States.t) =
   (* Si il ne reste plus rien à visiter*)
-  print_string "Parcours * ";
+  print_string ".";
+  let new_etat_restant_a_visiter = suppression_etat_inutile etat_restant_a_visiter in
 
-  if States.is_empty etat_restant_a_visiter then
+  if States.is_empty new_etat_restant_a_visiter then
     begin
-      print_string "Pas de sol * ";
+      (* print_string "Pas de sol * "; *)
       raise (Aucune_Solution_Trouve)
     end
   else (*Quand on a des trucs à visiter*)
     begin
-      print_string "Il ya sol * ";
-      let etat_a_visite = choix_etat_a_visiter etat_restant_a_visiter in
-      print_string "On a etat a visiter * ";
+      (* print_string "Il ya des etats a visiter * "; *)
+      let etat_a_visite = choix_etat_a_visiter new_etat_restant_a_visiter in
+      (* print_string "On a etat a visiter * "; *)
       (*Quand on a trouver l'etat solution*)
       if (get_score etat_a_visite 0 = 52) then
         begin
-          print_string "Bon score * ";
+          (* print_string "Bon score * "; *)
           etat_a_visite
         end
       else (*Sinon on continue la recherche*)
         begin
-          print_string "Mauvais score * ";
-          let maj_etat_restant_a_visiter = States.remove etat_a_visite etat_restant_a_visiter in
+          (* print_string "Mauvais score * "; *)
+          let maj_etat_restant_a_visiter = States.remove etat_a_visite new_etat_restant_a_visiter in
           let maj_etat_deja_traite = States.add etat_a_visite etat_deja_traite in
           let cartes_a_deplacer = cartes_en_tete_de_colone (copy_etat etat_a_visite) in
-          print_string "On a les cartes à deplacer * ";
+          (* print_string "On a les cartes à deplacer * "; *)
           let liste_des_etats_atteins = deplacement_des_cartes cartes_a_deplacer etat_a_visite in
+          (* print_string "On a la liste des etats atteinds * "; *)
           let new_maj_etat_restant_a_visiter = ajout_des_etats_atteints maj_etat_restant_a_visiter liste_des_etats_atteins in
           parcours_des_solutions new_maj_etat_restant_a_visiter maj_etat_deja_traite
         end
@@ -192,8 +271,11 @@ let rec parcours_des_solutions (etat_restant_a_visiter:States.t) (etat_deja_trai
 (*Prendre l'etat a visiter et trouver tous les coups memes ceux de registre, a chaque fois qu'on trouve,
 ajouter le coups a nouvel etat, valider le coup dans l'etat ne pas oublier array.copy*)
 let search (conf : Config.config) (fichier_solution : string) :unit=
+  print_string "etat partie * ";
   let etat_partie = normalisation (etatAPartirDeConfiguration conf) in
+  print_string "etatrestant * ";
   let etat_restant_a_visiter = States.add etat_partie States.empty in
+  print_string "etat deja traite * ";
   let etat_deja_traite = States.empty in
   try
     print_string "Juste avant parcours * ";

@@ -35,16 +35,18 @@ let set_game_seed name =
 
 let treat_game conf =
   let permut = XpatRandom.shuffle conf.seed in
-  Printf.printf "Voici juste la permutation de graine %d:\n" conf.seed;
+  (* Printf.printf "Voici juste la permutation de graine %d:\n" conf.seed;
   List.iter (fun n -> print_int n; print_string " ") permut;
   print_newline ();
   List.iter (fun n -> Printf.printf "%s " (Card.to_string (Card.of_num n)))
     permut;
-  print_newline ();
+  print_newline (); *)
   (*print_string "C'est tout pour l'instant. TODO: continuer...\n";*)
   match conf.mode with
   | Check s -> Etat.check conf
-  | Search s -> Searching.search conf s
+  | Search s -> 
+    print_string "Lancement de search";
+    Searching.search conf s
   ;
   exit 0
 
