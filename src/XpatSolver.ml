@@ -44,7 +44,7 @@ let treat_game conf =
   (*print_string "C'est tout pour l'instant. TODO: continuer...\n";*)
   match conf.mode with
   | Check s -> Etat.check conf
-  | Search s -> Searching.search conf
+  | Search s -> Searching.search conf s
   ;
   exit 0
 
