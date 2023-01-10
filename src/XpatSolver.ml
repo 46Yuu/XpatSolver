@@ -45,7 +45,7 @@ let treat_game conf =
   match conf.mode with
   | Check s -> Etat.check conf
   | Search s -> 
-    print_string "Lancement de search";
+    (* print_string "Lancement de search"; *)
     Searching.search conf s
   ;
   exit 0

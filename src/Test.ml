@@ -88,6 +88,24 @@ let ll_set = Searching.States.remove c ll_set;;
 print_string "Taille fin a près le remove de c = ";;
 print_int (List.length(Searching.States.elements ll_set));;
 print_newline ();;
+print_string "**************************************************************";;
+print_int (Searching.compare_state b (Searching.copy_etat b));
+print_string "**************************************************************";;
+print_int (Searching.compare_state b (Searching.copy_etat d));
+print_endline "**************************************************************";;
+let ll_set = Searching.States.add c ll_set;;
+let ll_set = Searching.States.add b ll_set;;
+if (Searching.States.mem c ll_set) then print_endline "c dans ll" else print_endline "c pas dans ll";;
+if (Searching.States.mem b ll_set) then print_endline "b dans ll" else print_endline "b pas dans ll";;
+let ll_set = Searching.States.remove b ll_set;;
+if (Searching.States.mem b ll_set) then print_endline "b dans ll" else print_endline "b pas dans ll";;
+
+let liste = Searching.cartes_en_tete_de_colone b;;
+let carte = fst(List.hd liste);;
+let rank,suit = Card.of_num carte;;
+(* print_int carte;; *)
+
+print_string (Etat.print_shuffle 4);;
 
 
 

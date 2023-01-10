@@ -504,6 +504,16 @@ let partie_gagne (etat : etat):bool =
   done;
   !retour
 
+let print_shuffle (seed:int) :string= 
+  let rec aux shuffle = 
+  match shuffle with 
+    | [] -> ""
+    | suit::l' ->
+      let rank,suit = (Card.of_num suit) in
+      String.cat (String.cat (Card.to_string (rank,suit)) " ") (aux l')
+  in 
+  aux (XpatRandom.shuffle seed) 
+
 let check (conf : Config.config) :unit=
   (*print_endline "(-----------Putain arrivé ici------ le mode est\n";*)
   (*let etatPartie = ref (Some (normalisation (etatAPartirDeConfiguration conf))) in*)
