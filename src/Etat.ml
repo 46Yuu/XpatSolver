@@ -12,10 +12,10 @@ type colone = {
 
 }
 
-type coup = {
+(* type coup = {
   vide : string;
 
-}
+} *)
 
 type depot = {
   nb_cartes_depose : int;
@@ -28,7 +28,7 @@ type etat = {
   registres : Card.card list;
   nb_registres_dispo : int;
   depot : depot PArray.t;
-  coups : coup list;
+  coups : string list;
   regle : regle;
 }
 

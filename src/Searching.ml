@@ -33,10 +33,6 @@ let compare_state (e1:etat) (e2:etat):int =
     end
   else 1
 module States = Set.Make (struct type t = etat let compare = compare_state end)
-(*Prendre l'etat a visiter et trouver tous les coups memes ceux de registre, a chaque fois qu'on trouve,
-ajouter le coups a nouvel etat, valider le coup dans l'etat ne pas oublier array.copy
-*)
-
 
 (*Renvoi le score de l'etat*)
   let rec get_score (etat : etat) (i:int):int = 
@@ -58,18 +54,24 @@ let choix_etat_a_visiter (modul:States.t):etat =
   let liste_des_etats_trie = List.sort comparaison_inferiorite_etat liste_des_etats in
   List.hd(List.rev liste_des_etats_trie)
 
+  (*Remplir le fichier solution*)
+let remplir_fichier_colone nom_fichier liste_de_coups =
+  let rec remplissement canal liste_de_coups =
+  match liste_de_coups with
+  | [] -> 1
+  | h::r ->
+    output_string canal (string_of_int h);
+    output_char canal '\n';
+    remplissement canal r
+  in
+  let c = open_out nom_fichier in
+  (* let remplissement c liste_de_coups
+  close_out c *)
+  let res = remplissement c liste_de_coups in
+  close_out c
 
-let search (conf : Config.config) :unit=
-  let etat_partie = normalisation (etatAPartirDeConfiguration conf) in
-  let etat_restant_a_visiter = States.add etat_partie States.empty in
-  let etat_deja_traite = States.empty in
-  let etat_a_visite = choix_etat_a_visiter etat_restant_a_visiter in
-  print_endline "a"
-  
-
-
-(*Retourne la liste des cartes à deplacer c'est à dire celles en tête de colones*)
-let rec cartes_en_tete_de_colone (etat:etat) (num_colone:int) (liste:int list) :(int list)=
+  (*Retourne la liste des cartes à deplacer c'est à dire celles en tête de colones*)
+let rec cartes_en_tete_de_colone (etat:etat) (num_colone:int) (liste:int list) :(int list) =
   if num_colone < etat.nb_colones then
     begin
       let carte_en_tete = List.hd( List.rev((PArray.get etat.colones num_colone).liste) ) in
@@ -79,8 +81,8 @@ let rec cartes_en_tete_de_colone (etat:etat) (num_colone:int) (liste:int list) :
     begin
       liste
     end
-
-(*Retourne la liste des String des destinations qui sont des coups valides par rapport
+  
+  (*Retourne la liste des String des destinations qui sont des coups valides par rapport
   a la carte a deplacer*)
 let rec tout_coups_possibles (carte_depart : int) (etat : etat) (i : int) =
   if (i < etat.nb_colones) then 
@@ -106,3 +108,17 @@ let rec tout_coups_possibles (carte_depart : int) (etat : etat) (i : int) =
           []
         end
     end
+
+(*Prendre l'etat a visiter et trouver tous les coups memes ceux de registre, a chaque fois qu'on trouve,
+ajouter le coups a nouvel etat, valider le coup dans l'etat ne pas oublier array.copy*)
+let search (conf : Config.config) :unit=
+  let etat_partie = normalisation (etatAPartirDeConfiguration conf) in
+  let etat_restant_a_visiter = States.add etat_partie States.empty in
+  let etat_deja_traite = States.empty in
+  let etat_a_visite = choix_etat_a_visiter etat_restant_a_visiter in
+  print_endline "a"
+  
+
+
+
+
